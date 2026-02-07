@@ -2,22 +2,22 @@ import java.io.*;
 import javax.sound.sampled.*;
 
 public class Music extends Thread {
-    private String fileName;
+    private String resourcePath;
     private final int EXTERNAL_BUFFER_SIZE = 524288;
-    public Music(String wavFile) {
-        this.fileName = wavFile;
+    public Music(String resourcePath) {
+        this.resourcePath = resourcePath;
     }
     @SuppressWarnings("unused")
     public void run() {
-        File soundFile = new File(fileName);
-        if (!soundFile.exists()) {
-            System.err.println("Wave file not found:" + fileName);
-            return;
-        }
         while (true) {
+            InputStream is = Music.class.getResourceAsStream(resourcePath);
+            if (is == null) {
+                System.err.println("Wave file not found in classpath: " + resourcePath);
+                return;
+            }
             AudioInputStream audioInputStream = null;
             try {
-                audioInputStream = AudioSystem.getAudioInputStream(soundFile);
+                audioInputStream = AudioSystem.getAudioInputStream(is);
             } catch (UnsupportedAudioFileException e1) {
                 e1.printStackTrace();
                 return;
@@ -25,6 +25,7 @@ public class Music extends Thread {
                 e1.printStackTrace();
                 return;
             }
+
             AudioFormat format = audioInputStream.getFormat();
             SourceDataLine auline = null;
             DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
@@ -55,8 +56,14 @@ public class Music extends Thread {
                 return;
             } finally {
                 auline.drain();
+                auline.close();
+                try {
+                    audioInputStream.close();
+                    is.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 }
-    
