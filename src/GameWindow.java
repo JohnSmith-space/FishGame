@@ -1,6 +1,7 @@
 import java.util.*;
 import javax.swing.*;
 import java.awt.event.*;
+import java.awt.image.BufferStrategy;
 import java.awt.*;
 
 public class GameWindow extends JFrame {
@@ -12,13 +13,16 @@ public class GameWindow extends JFrame {
     public static final int SGAME_1 = 2;
     public static final int SGAME_M = 3;
     public static final int SGAME_2 = 4;
+    private final Font TITLE_FONT = new Font("Arial", Font.PLAIN, 50);
+    private final Font SUBTITLE_FONT = new Font("Arial", Font.PLAIN, 30);
+    private final Font PROMPT_FONT = new Font("Arial", Font.PLAIN, 35);
 
     public static int currentStatus = 0;
     public static int gameMode = 0;
-    Image offScreenImage;
+    BufferStrategy offScreenImage;
     Graphics gImage;
-    Fish fish = new Fish();
 
+    Fish fish = new Fish();
     Enemy enemy1;
     Enemy enemy2;
     Enemy enemy3;
@@ -27,7 +31,9 @@ public class GameWindow extends JFrame {
     Submarine submarine;
     boolean isBoss = false;
     boolean isSubmarine = false;
+
     static long start = 0, end = 0;
+    static long pauseStart = 0, pauseEnd = 0, pauseLast = 0;
     
     /** Used for generating fishes. */
     int time = 0;
@@ -42,64 +48,66 @@ public class GameWindow extends JFrame {
     }
 
     public void paint(Graphics g) {
-        offScreenImage = createImage(1280, 800);
-        gImage = offScreenImage.getGraphics();
+        offScreenImage = getBufferStrategy();
+        if (offScreenImage == null) {
+            createBufferStrategy(2);
+            offScreenImage = getBufferStrategy();
+        }
+        gImage = offScreenImage.getDrawGraphics();
+        if (gImage == null) return;
         gImage.drawImage(GameUtils.bgImage, 0, 0, 1280, 800, null);
         switch (currentStatus) {
             case MAINWIN:
                 gImage.setColor(Color.yellow);
-                gImage.setFont(new Font("Arial", Font.PLAIN, 50));
+                gImage.setFont(TITLE_FONT);
                 gImage.drawString("Press Key to Select a Mode", 350, 550);
-                gImage.setFont(new Font("Arial", Font.PLAIN, 30));
+                gImage.setFont(SUBTITLE_FONT);
                 gImage.drawString("1- Classic Mode", 400, 650);
                 gImage.drawString("2- SheepGame Mode", 400, 700);
                 break;
             case CLASSIC:
-                create1();
                 paintFishes();
-                setAndEat();
                 drawBossLine();
                 showExp();
                 break;
             case SGAME_1:
-                create2();
                 paintFishes();
-                setAndEat();
                 drawBossLine();
                 showExp();
                 break;
             case SGAME_2:
-                create3();
                 paintFishes();
-                setAndEat();
                 drawBossLine();
                 showExp();
                 break;
             case SGAME_M:
                 gImage.setColor(Color.orange);
-                gImage.setFont(new Font("Arial", Font.PLAIN, 50));
+                gImage.setFont(TITLE_FONT);
                 gImage.drawString("The difficulty increased!", 450, 300);
                 showGameOverInfo();
                 break;
             case GAMEOVER: 
                 gImage.setColor(Color.red);
-                gImage.setFont(new Font("Arial", Font.PLAIN, 50));
+                gImage.setFont(TITLE_FONT);
                 gImage.drawString("GAME OVER", 450, 300);
                 showGameOverInfo();
                 break;
             case GAMEWIN:
                 gImage.setColor(Color.green);
-                gImage.setFont(new Font("Arial", Font.PLAIN, 50));
+                gImage.setFont(TITLE_FONT);
                 gImage.drawString("GAME WIN", 450, 300);
                 showGameOverInfo();
                 break;
             case PAUSE:
                 gImage.setColor(Color.orange);
-                gImage.setFont(new Font("Arial", Font.PLAIN, 50));
+                gImage.setFont(TITLE_FONT);
                 gImage.drawString("PAUSED", 450, 300);
+                gImage.setFont(PROMPT_FONT);
+                gImage.drawString("Press space to continue, and press esc to exit.", 350, 400);
                 break;
         }
-        g.drawImage(offScreenImage, 0, 0, null);
+        offScreenImage.show();
+        gImage.dispose();
     }
 
     public void launch() {
@@ -144,8 +152,13 @@ public class GameWindow extends JFrame {
                 if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                     if (currentStatus == CLASSIC || currentStatus == SGAME_1 || currentStatus == SGAME_2) {
                         currentStatus = PAUSE;
+                        pauseStart = System.currentTimeMillis();
                     } else if (currentStatus == PAUSE) {
-                        currentStatus = gameMode;
+                        synchronized(this) {
+                            pauseEnd = System.currentTimeMillis();
+                            pauseLast += pauseEnd - pauseStart;
+                            currentStatus = gameMode;
+                        }
                     }
                 }
                 if (e.getKeyCode() == KeyEvent.VK_1 && currentStatus == MAINWIN) {
@@ -155,14 +168,32 @@ public class GameWindow extends JFrame {
                     start = System.currentTimeMillis();
                 }
                 if (e.getKeyCode() == KeyEvent.VK_2 && currentStatus == MAINWIN) {
-                    fish.setTimes(2);
+                    fish.setTimes(2.5);
                     currentStatus = gameMode = SGAME_1;
                     repaint();
                     start = System.currentTimeMillis();
                 }
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE && currentStatus == PAUSE) {
+                    reGame();
+                    currentStatus = MAINWIN;
+                }
             }
         });
         while (true) {
+            switch (currentStatus) {
+                case CLASSIC:
+                    create1();
+                    setAndEat();
+                    break;
+                case SGAME_1:
+                    create2();
+                    setAndEat();
+                    break;
+                case SGAME_2:
+                    create3();
+                    setAndEat();
+                    break;
+            }
             repaint();
             ++time;
             try {
@@ -173,7 +204,7 @@ public class GameWindow extends JFrame {
         }
     }
 
-    public void create1() {
+public void create1() {
         double random = Math.random();
         switch (fish.level) {
             case 4:
@@ -408,13 +439,13 @@ public class GameWindow extends JFrame {
 
     void showGameOverInfo() {
         if (end == 0) end = System.currentTimeMillis();
-        gImage.drawString("Time taken: " + (end-start)/60000 + "min" + (end-start)/1000%60 + "s", 450, 400);
-        gImage.setFont(new Font("Arial", Font.PLAIN, 35));
+        gImage.drawString("Time taken: " + (end-start-pauseLast)/60000 + "min" + (end-start-pauseLast)/1000%60 + "s", 450, 400);
+        gImage.setFont(PROMPT_FONT);
         gImage.drawString("Click the left mouse button to continue...", 400, 500);
     }
     void showExp() {
         gImage.setColor(Color.yellow);
-        gImage.setFont(new Font("Arial", Font.PLAIN, 35));
+        gImage.setFont(PROMPT_FONT);
         gImage.drawString("Exp: " + fish.exp + "  Level: " + fish.level, 100, 120);
     }
 }

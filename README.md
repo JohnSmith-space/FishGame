@@ -10,11 +10,7 @@ Java 8 或更高版本。
 ## 文件目录
 * `src`：存放代码
 * `bin`：存放编译的二进制文件
-## 更新日志
-### 2026年2月7日 v1.1
-1. 调整部分鱼类大小
-2. 优化吃鱼的过程，修复了吃鱼时卡死的问题
-### 2025年7月24日 v1.0
+## 游戏玩法
 1. 经典模式：吃掉比自己小的鱼以成长，避免被更大的鱼吃掉
 2. “羊了个羊”模式：玩法同上，但第一关简单，第二关异常困难
 
@@ -22,7 +18,7 @@ Java 8 或更高版本。
 ## Project Introduction
 This is a "Big Fish Eats Small Fish" program written in Java.
 ## Environment Requirements
-Java 8 or higher.
+Java 8 or later.
 ## Instructions
 1. Install Java from https://www.java.com/download/
 2. Unzip FishGame.zip from Releases to any location.
@@ -30,10 +26,6 @@ Java 8 or higher.
 ## File Directory
 * `src`: Contains the source code.
 * `bin`: Contains the compiled binary files.
-## Changelog
-### Feb 7, 2026 v1.1
-1. Adjusted the sizes of some fishes.
-2. Optimized the fish-eating process and fixed freezing issues during fish eating.
-### July 24, 2025 v1.0
+## Gameplay
 1. Classic mode: Eat fish smaller than yourself to grow, and avoid being eaten by larger fish.
 2. "SheepGame" mode: TThe gameplay is the same as above, but the first level is easy, and the second level is extremely difficult.
